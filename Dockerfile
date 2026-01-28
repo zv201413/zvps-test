@@ -42,7 +42,7 @@ RUN echo "[supervisord]" > /etc/supervisord.conf && \
     echo "autorestart=true" >> /etc/supervisord.conf && \
     echo "" >> /etc/supervisord.conf && \
     echo "[program:ttyd]" >> /etc/supervisord.conf && \
-    echo "command=/usr/local/bin/ttyd -p 8080 -W bash" >> /etc/supervisord.conf && \
+    echo "command=/usr/local/bin/ttyd -W bash" >> /etc/supervisord.conf && \
     echo "autorestart=true" >> /etc/supervisord.conf
 
 # 6. 设置工作目录
