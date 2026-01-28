@@ -2,20 +2,28 @@ FROM ghcr.io/vevc/ubuntu:25.11.15
 
 USER root
 
-# 1. 安装基础工具 + 核心组件 (Cloudflared, GOST, Xray, WARP-GO)
+# 1. 安装基础工具
 RUN apt-get update && apt-get install -y \
     supervisor procps wget curl passwd sudo openssh-server net-tools && \
-    # 安装 Cloudflared
-    curl -L --output cloudflared.deb https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb && \
-    dpkg -i cloudflared.deb && rm cloudflared.deb && \
-    # 安装 GOST
-    wget https://github.com/ginuerzh/gost/releases/download/v2.11.5/gost-linux-amd64-2.11.5.gz && \
-    gunzip gost-linux-amd64-2.11.5.gz && mv gost-linux-amd64-2.11.5 /usr/local/bin/gost && chmod +x /usr/local/bin/gost && \
-    # 安装 WARP-GO
-    wget https://github.com/fscarmen/warp-go/releases/latest/download/warp-go_linux_amd64 -O /usr/local/bin/warp-go && \
-    chmod +x /usr/local/bin/warp-go && \
-    # 清理缓存
     rm -rf /var/lib/apt/lists/*
+
+# 2. 安装 Cloudflared
+RUN curl -L --retry 3 --output cloudflared.deb https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb && \
+    dpkg -i cloudflared.deb && rm cloudflared.deb
+
+# 3. 安装 GOST v2.12.0 (处理 .tar.gz 格式)
+RUN wget --tries=3 https://github.com/ginuerzh/gost/releases/download/v2.12.0/gost_2.12.0_linux_amd64.tar.gz && \
+    tar -xvf gost_2.12.0_linux_amd64.tar.gz && \
+    mv gost /usr/local/bin/gost && \
+    chmod +x /usr/local/bin/gost && \
+    rm gost_2.12.0_linux_amd64.tar.gz
+
+# 4. 安装 WARP-GO v1.0.8 (处理 .tar.gz 格式)
+RUN wget --tries=3 https://github.com/Fangliding/warp-go/releases/download/v1.0.8/warp-go_1.0.8_linux_amd64.tar.gz && \
+    tar -xvf warp-go_1.0.8_linux_amd64.tar.gz && \
+    mv warp-go /usr/local/bin/warp-go && \
+    chmod +x /usr/local/bin/warp-go && \
+    rm warp-go_1.0.8_linux_amd64.tar.gz
 
 # 2. 设置默认环境变量
 ENV SSH_USER=zv
