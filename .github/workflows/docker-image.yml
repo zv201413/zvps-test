@@ -7,15 +7,16 @@ on:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+    # 必须明确声明这些权限，否则 GITHUB_TOKEN 推不动镜像
     permissions:
       contents: read
       packages: write
+      id-token: write
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 增加：设置 Docker Buildx (支持多架构构建和更高级的缓存)
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -24,6 +25,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
+          # 确保这里使用的是自动生成的令牌
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push Docker image
@@ -31,15 +33,7 @@ jobs:
         with:
           context: .
           push: true
-          # 明确指定平台为 linux/amd64，防止在某些 Runner 上构建出 ARM 镜像
           platforms: linux/amd64
           tags: ghcr.io/${{ github.repository_owner }}/zvps:latest
-          # 增加：启用 GitHub Actions 缓存，加速后续构建
           cache-from: type=gha
           cache-to: type=gha,mode=max
-
-      # 关于“自动通知更新”：
-      # Northflank 实际上支持 "Image Pull Secret" 和 "Auto-deploy"。
-      # 只要你在 Northflank 面板里开启了 "Continuous Deployment"，
-      # 当它检测到 GHCR 上的 :latest 标签更新时，会自动拉取并重启。
-      # 所以你不需要在这里写复杂的 CF CLI 或 Northflank API。
