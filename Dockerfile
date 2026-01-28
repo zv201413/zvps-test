@@ -34,9 +34,28 @@ RUN useradd -m -s /bin/bash zv && \
     echo "root:105106" | chpasswd && \
     echo "zv ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
-# 5. 【修改点】不要直接用软链接指向硬盘，先在镜像里放一个“保底”配置
-# 这样即使硬盘没挂载成功，SSH 也能起来，方便你进去修
-COPY supervisord.conf /etc/supervisord.conf
+# 5. 直接在镜像内生成默认配置文件（保底用）
+RUN printf "[unix_http_server]\n\
+file=/var/run/supervisor.sock\n\
+chmod=0700\n\
+\n\
+[supervisord]\n\
+nodaemon=true\n\
+user=root\n\
+\n\
+[rpcinterface:supervisor]\n\
+supervisor.rpcinterface_factory = supervisor.rpcinterface:make_main_rpcinterface\n\
+\n\
+[supervisorctl]\n\
+serverurl=unix:///var/run/supervisor.sock\n\
+\n\
+[program:sshd]\n\
+command=/usr/sbin/sshd -D\n\
+autorestart=true\n\
+\n\
+[program:cloudflared]\n\
+command=/usr/bin/cloudflared tunnel --no-autoupdate run --token \${CF_TOKEN}\n\
+autorestart=true\n" > /etc/supervisord.conf
 
 # 6. 设置工作目录
 WORKDIR /home/zv
